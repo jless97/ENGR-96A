@@ -29,7 +29,9 @@
 // Buffer size for username/password
 #define SEND_BUFFER_SIZE 32
 // Buffer size for password
-#define BUFFER_SIZE 8
+#define PWD_BUFFER_SIZE 8
+// Buffer size for Group ID
+#define ID_BUFFER_SIZE 1
 // Light threshold distinguising between high or low light intensity
 #define THRESHOLD 100
 
@@ -46,8 +48,10 @@ mraa_aio_context light3;
 mraa_gpio_context button;
 // Variables to connect to server as client
 int client_socket_fd, portno;
+// Buffer to store the Group ID
+char id_buf[ID_BUFFER_SIZE];
 // Buffer to store the password
-char buf[BUFFER_SIZE];
+char pwd_buf[PWD_BUFFER_SIZE];
 // Buffer containing username/password to send to server
 char send_buf[SEND_BUFFER_SIZE];
 // Variable storing the state of the button
@@ -56,7 +60,11 @@ int button_state = 0;
 int retry_count = 3;
 
 /* Flags */
+// Flag to indicate whether the password can be retried before being locked out
 int retry_password_flag = 1;
+// Flag to indicate whether the button state can be altered
+// Serves basic function as a lock
+int button_flag = 0;
 
 ////////////////////////////////////////////////////////////////////////////
 /////////////////////////////// Prototypes /////////////////////////////////
@@ -178,17 +186,24 @@ void
 button_handler(void) {
     // State of the button to indicate which light sensor is high (and others are low)
     // Four states corresponding to the four light sensors
-    if (button_state == 3) {
-        button_state = 0;
-    }
-    else {
-        button_state++;
+    
+    // Print out the button state so that the user knows which light sensor is active
+    // Button should only be allowed to change state when prompted
+    // Lock button state critical section when not active
+    if (button_flag == 1) {
+        fprintf(stdout, "Light sensor currently active: %d\n", button_state);
+        if (button_state == 3) {
+            button_state = 0;
+        }
+        else {
+            button_state++;
+        }
     }
 }
 
 void
 userPrompt(void) {
-    // Explain how to the user how to generate the password using the sensors
+    // Explain how to the user how to generate the ID and password using the sensors
     
     // Explain the values that can be produced from each of the four light sensors
     fprintf(stdout, "There are four light sensors each having two different values:\n");
@@ -197,25 +212,58 @@ userPrompt(void) {
     fprintf(stdout, "\tLight sensor 2 is either 4 or 5\n");
     fprintf(stdout, "\tLight sensor 3 is either 6 or 7\n");
     sleep(1);
+    
     // Explain how to produce the given value for the light sensor
     fprintf(stdout, "Cover the light sensor to produce the lower number for that particular sensor (i.e. Cover light sensor 2 to produce a 4.\n");
     fprintf(stdout, "Otherwise the light sensor produces the higher number for that particular sensor (i.e. Don't cover light sensor 2 to produce a 5.\n");
     sleep(1);
+    
     // Explain how to use the button to choose which light sensor to use
     fprintf(stdout, "To select which light sensor is active, press the button to change between light sensors:");
     fprintf(stdout, "By default, light sensor 0 starts active. To generate a 2 or a 3, press the button once to switch to light sensor 1. If the button is pressed again, then light sensor 2 becomes active (having values 4 or 5).\n");
     sleep(1);
     
-    // Prompt user to enter the password
-    fprintf(stdout, "\nIn 3 seconds, please enter your 8-digit password.\n");
+    // Prompt user to enter the ID
+    fprintf(stdout, "Light sensor currently active: %d\n", button_state);
+    fprintf(stdout, "\nPress the button to select which light sensor is active.\n");
+    
+    /* Critical section */
+    button_flag = 1;
+    sleep(2);
+    button_flag = 0;
+    
+    fprintf(stdout, "\nIn 3 seconds, please enter your 1-digit group ID.\n");
     sleep(3);
     
     int i;
-    for (i = 7; i > 0; i--) {
+    for (i = 1; i > 0; i--) {
         fprintf(stdout, "In %d seconds...\n", i);
         sleep(4);
-        getPassword(buf);
-        fprintf(stdout, "You entered %s so far.\n", buf);
+        getPassword(id_buf);
+        fprintf(stdout, "The Group ID entered: %s.\n", id_buf);
+    }
+    
+    sleep(1);
+    
+    // Prompt user to enter the password
+    fprintf(stdout, "Light sensor currently active: %d\n", button_state);
+    fprintf(stdout, "\nPress the button to select which light sensor is active.\n");
+    sleep(2);
+    fprintf(stdout, "\nIn 3 seconds, please enter your 8-digit password.\n");
+    sleep(3);
+    
+    for (i = 7; i > 0; i--) {
+        fprintf(stdout, "\nPress the button to select which light sensor is active.\n");
+        
+        /* Critical section */
+        button_flag = 1;
+        sleep(2);
+        button_flag = 0;
+        
+        fprintf(stdout, "In %d seconds...\n", i);
+        sleep(4);
+        getPassword(pwd_buf);
+        fprintf(stdout, "You entered %s so far.\n", pwd_buf);
     }
 }
 
@@ -277,9 +325,11 @@ createUsernamePassword(void) {
     memset(send_buf, 0, SEND_BUFFER_SIZE);
     
     // Format username
-    strcat(send_buf, "ID = Group3 Password = ");
+    strcat(send_buf, "ID = ");
+    strcat(send_buf, id_buf);
     // Format password
-    strcat(send_buf, buf);
+    stract(send_buf, " Password = ");
+    stract(send_buf, pwd_buf);
     strcat(send_buf, "\n");
 }
 
@@ -336,8 +386,9 @@ main (int argc, char *argv[]) {
     // Set up client connection with server
     initClient(argc, argv);
     
-    // Clear out buf to process password
-    memset(buf, 0, BUFFER_SIZE);
+    // Initialize buffers that will store the Group ID and password
+    memset(id_buf, 0, ID_BUFFER_SIZE);
+    memset(pwd_buf, 0, PWD_BUFFER_SIZE);
     
     // Enter password: if success, then door opened, exit success
     // If failure, can retry a total of three times before being locked out
