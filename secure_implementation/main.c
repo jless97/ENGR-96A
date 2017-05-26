@@ -34,6 +34,8 @@
 #define ID_BUFFER_SIZE 1
 // Light threshold distinguising between high or low light intensity
 #define THRESHOLD 100
+// Buffer size to send to server
+#define BUFFER_SIZE 4
 
 ////////////////////////////////////////////////////////////////////////////
 /////////////////////////////// Globals ////////////////////////////////////
@@ -328,8 +330,8 @@ createUsernamePassword(void) {
     strcat(send_buf, "ID = ");
     strcat(send_buf, id_buf);
     // Format password
-    stract(send_buf, " Password = ");
-    stract(send_buf, pwd_buf);
+    strcat(send_buf, " Password = ");
+    strcat(send_buf, pwd_buf);
     strcat(send_buf, "\n");
 }
 
