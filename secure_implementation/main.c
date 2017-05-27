@@ -11,7 +11,7 @@
 ////////////////////////////////////////////////////////////////////////////
 /////////////////////////////// Includes ///////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
-#include <stdio.h>
+#i#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -20,6 +20,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <signal.h>
+#include <time.h> /* time_t, struct tm, time, localtime, current_time, previous_time */
 #include <mraa/aio.h>
 #include <mraa/gpio.h>
 
@@ -29,13 +30,13 @@
 // Buffer size for username/password
 #define SEND_BUFFER_SIZE 32
 // Buffer size for password
-#define PWD_BUFFER_SIZE 8
+#define PWD_BUFFER_SIZE 9
 // Buffer size for Group ID
 #define ID_BUFFER_SIZE 1
+// Buffer size to hold message from server
+#define RECV_BUFFER_SIZE 4
 // Light threshold distinguising between high or low light intensity
 #define THRESHOLD 100
-// Buffer size to send to server
-#define BUFFER_SIZE 4
 
 ////////////////////////////////////////////////////////////////////////////
 /////////////////////////////// Globals ////////////////////////////////////
@@ -56,6 +57,8 @@ char id_buf[ID_BUFFER_SIZE];
 char pwd_buf[PWD_BUFFER_SIZE];
 // Buffer containing username/password to send to server
 char send_buf[SEND_BUFFER_SIZE];
+// Buffer containing message from server
+char receive_buf[RECV_BUFFER_SIZE];
 // Variable storing the state of the button
 int button_state = 0;
 // Number of retries remaining before lockout
@@ -68,6 +71,8 @@ int retry_password_flag = 1;
 // Serves basic function as a lock
 int button_flag = 0;
 
+/* Debug */
+int run_flag = 1;
 ////////////////////////////////////////////////////////////////////////////
 /////////////////////////////// Prototypes /////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
@@ -104,8 +109,10 @@ print_usage(void) {
 void
 handler(int signum) {
     if(signum == SIGINT) {
-        exit(EXIT_SUCCESS);
+        //debugging
+        run_flag = 0;
     }
+    exit(EXIT_SUCCESS);
 }
 
 void
@@ -193,13 +200,13 @@ button_handler(void) {
     // Button should only be allowed to change state when prompted
     // Lock button state critical section when not active
     if (button_flag == 1) {
-        fprintf(stdout, "Light sensor currently active: %d\n", button_state);
         if (button_state == 3) {
             button_state = 0;
         }
         else {
             button_state++;
         }
+        fprintf(stdout, "\tLight sensor currently active: %d\n", button_state);
     }
 }
 
@@ -208,62 +215,84 @@ userPrompt(void) {
     // Explain how to the user how to generate the ID and password using the sensors
     
     // Explain the values that can be produced from each of the four light sensors
+    fprintf(stdout, "===================================================================\n");
     fprintf(stdout, "There are four light sensors each having two different values:\n");
     fprintf(stdout, "\tLight sensor 0 is either 0 or 1\n");
     fprintf(stdout, "\tLight sensor 1 is either 2 or 3\n");
     fprintf(stdout, "\tLight sensor 2 is either 4 or 5\n");
-    fprintf(stdout, "\tLight sensor 3 is either 6 or 7\n");
-    sleep(1);
+    fprintf(stdout, "\tLight sensor 3 is either 6 or 7\n\n");
+    fprintf(stdout, "===================================================================\n");
+    sleep(8);
     
     // Explain how to produce the given value for the light sensor
-    fprintf(stdout, "Cover the light sensor to produce the lower number for that particular sensor (i.e. Cover light sensor 2 to produce a 4.\n");
-    fprintf(stdout, "Otherwise the light sensor produces the higher number for that particular sensor (i.e. Don't cover light sensor 2 to produce a 5.\n");
-    sleep(1);
+    fprintf(stdout, "How to produce values for light sensors:\n\n");
+    fprintf(stdout, "1. Cover light sensor to produce the lower number for that sensor \n\t(i.e. Cover light sensor 0 to produce a 0).\n\n");
+    fprintf(stdout, "2. Otherwise light sensor produces the higher number for that sensor \n\t(i.e. Don't cover light sensor 2 to produce a 5).\n\n");
+    fprintf(stdout, "===================================================================\n");
+    sleep(8);
     
     // Explain how to use the button to choose which light sensor to use
-    fprintf(stdout, "To select which light sensor is active, press the button to change between light sensors:");
-    fprintf(stdout, "By default, light sensor 0 starts active. To generate a 2 or a 3, press the button once to switch to light sensor 1. If the button is pressed again, then light sensor 2 becomes active (having values 4 or 5).\n");
-    sleep(1);
+    fprintf(stdout, "To select which light sensor is active, press the button to change\n between light sensors: \n\n");
+    fprintf(stdout, "- By default, light sensor 0 starts active.\n");
+    fprintf(stdout, "- To generate a 2 or a 3, press the button once to switch to light sensor 1.\n");
+    fprintf(stdout, "- If the button is pressed again, then light sensor 2 becomes active\n (having values 4 or 5).\n\n");
+    fprintf(stdout, "===================================================================\n");
+    sleep(8);
     
     // Prompt user to enter the ID
     fprintf(stdout, "Light sensor currently active: %d\n", button_state);
     fprintf(stdout, "\nPress the button to select which light sensor is active.\n");
-    
+
     /* Critical section */
-    button_flag = 1;
-    sleep(2);
+    // Allow for user to change the state of the button for 5 seconds
+    time_t endwait;
+    int seconds = 5; // end loop after this time has elapsed
+    endwait = time(NULL) + seconds;
+    while (time(NULL) < endwait) {
+        // Activate button
+        button_flag = 1;
+    }
+    // Deactivate button
     button_flag = 0;
-    
-    fprintf(stdout, "\nIn 3 seconds, please enter your 1-digit group ID.\n");
-    sleep(3);
+
+    fprintf(stdout, "\n===================================================================\n");
     
     int i;
-    for (i = 1; i > 0; i--) {
-        fprintf(stdout, "In %d seconds...\n", i);
-        sleep(4);
-        getPassword(id_buf);
-        fprintf(stdout, "The Group ID entered: %s.\n", id_buf);
+    for (i = 3; i > 0; i--) {
+        fprintf(stdout, "In %d seconds, please enter your 1-digit group ID.\n", i);
+        sleep(1);
+        if (i == 1) {
+            getPassword(id_buf);
+            fprintf(stdout, "The Group ID entered: %s.\n", id_buf);
+        }
     }
     
-    sleep(1);
+    sleep(8);
     
     // Prompt user to enter the password
+    fprintf(stdout, "===================================================================\n");
     fprintf(stdout, "Light sensor currently active: %d\n", button_state);
-    fprintf(stdout, "\nPress the button to select which light sensor is active.\n");
-    sleep(2);
-    fprintf(stdout, "\nIn 3 seconds, please enter your 8-digit password.\n");
-    sleep(3);
+    fprintf(stdout, "\nIn 5 seconds, please enter your 8-digit password.\n");
+    sleep(5);
     
-    for (i = 7; i > 0; i--) {
+    for (i = 8; i > 0; i--) {
+        fprintf(stdout, "\n===================================================================\n");
         fprintf(stdout, "\nPress the button to select which light sensor is active.\n");
         
         /* Critical section */
-        button_flag = 1;
-        sleep(2);
+        // Allow for user to change the state of the button for 5 seconds
+        time_t endwait;
+        int seconds = 5; // end loop after this time has elapsed
+        endwait = time(NULL) + seconds;
+        while (time(NULL) < endwait) {
+            // Activate button
+            button_flag = 1;
+        }
+        // Deactivate button
         button_flag = 0;
         
         fprintf(stdout, "In %d seconds...\n", i);
-        sleep(4);
+        sleep(5);
         getPassword(pwd_buf);
         fprintf(stdout, "You entered %s so far.\n", pwd_buf);
     }
@@ -271,9 +300,6 @@ userPrompt(void) {
 
 void
 getPassword(char *buf) {
-    /* Debugging */
-    //printf("%.2f\n", val);
-    
     double light;
     switch (button_state) {
         // Light sensor 0 is active (values 0 or 1)
@@ -349,24 +375,24 @@ sendToServer(char *password) {
     }
     
     // clear out the buffer
-    memset(buf, 0, BUFFER_SIZE);
+    memset(receive_buf, 0, RECV_BUFFER_SIZE);
     
     // get the response from the server and print it to the user
-    nread = read(client_socket_fd, buf, 255);
+    nread = read(client_socket_fd, receive_buf, RECV_BUFFER_SIZE);
     if (nread < 0) {
         fprintf(stderr, "Error reading from socket.\n");
         exit(EXIT_FAILURE);
     }
     
     // Print the response (YES or NO) to STDOUT
-    printf("%s\n", buf);
+    printf("%s\n", receive_buf);
     
     // If correct password, then door is opened, exit program
-    if (strcmp(buf, "YES") == 0) {
+    if (strcmp(receive_buf, "YES") == 0) {
         retry_password_flag = 0;
     }
     // If incorrect password, door still locked, retry if attempts remain
-    else if (strcmp(buf, "NO") == 0) {
+    else if (strcmp(receive_buf, "NO") == 0) {
         retry_count--;
         fprintf(stdout, "Incorrect username/password combination given.\n");
         fprintf(stdout, "Number of retries remaining before lockout: %d\n", retry_count);
@@ -386,11 +412,15 @@ main (int argc, char *argv[]) {
     signal(SIGINT, handler);
     
     // Set up client connection with server
-    initClient(argc, argv);
+    //initClient(argc, argv);
+    
+    // Initialize the button and light sensors
+    initSensors();
     
     // Initialize buffers that will store the Group ID and password
     memset(id_buf, 0, ID_BUFFER_SIZE);
     memset(pwd_buf, 0, PWD_BUFFER_SIZE);
+    
     
     // Enter password: if success, then door opened, exit success
     // If failure, can retry a total of three times before being locked out
