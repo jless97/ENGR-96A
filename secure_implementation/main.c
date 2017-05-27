@@ -412,7 +412,7 @@ main (int argc, char *argv[]) {
     signal(SIGINT, handler);
     
     // Set up client connection with server
-    //initClient(argc, argv);
+    initClient(argc, argv);
     
     // Initialize the button and light sensors
     initSensors();
