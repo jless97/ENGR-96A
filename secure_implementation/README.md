@@ -51,3 +51,8 @@ The compiled executable
 #### Makefile
 Used to build the program consisting of three targets: make (to create the executable), clean (to remove files created with make),
 and dist (to generate the zip file). 
+
+## Equipment/Language
+* Intel Edison 
+* Grove Sensor Kit (4 light sensors, 1 push button)
+* Language: C
