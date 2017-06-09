@@ -25,9 +25,8 @@ the use of bots to perform the dictionary attacks for an attacker. Lastly, to pr
 the program encrypted the data on the client (and server side) using the Open SSL APIs. In this way, the data would be encrypted
 going to the server and upon receiving the reply from the server, further strengthening the IoT system.
 
-## Description of included files
 
-#### main.c
+### Implementation:
 This IoT system consisted of the use of an Intel Edison module, in combination with four light sensors and a push button to generate
 a username/password string, which was sent over to a server to virtually unlock a door. A single light sensor allowed for a binary
 value to be input, and with the use of four light sensors, 8 different values could be created (i.e. 0-7). The push button served
@@ -41,6 +40,24 @@ the server is also encrypted. The Edison receives a YES or NO response from the 
 is the correct message, and thus unlocking the door. If an incorrect password is sent to the server 3 times, then the server would
 inact a lockout, stop receiving requests from the Edison, and the Edison would then be locked out for 5 minutes (after which, the
 user can try to input the correct password). 
+
+## Description of included files
+
+#### main.c
+This project consists of setting up our Edison as a client and connecting to a server using the standard TCP/IP and Open SSL APIs.
+Upon running the executable, the user is prompted with a list of instructions on how to enter the username/password string, which is
+to be sent (encrypted) to the server to request access to unlocking a virtual door. Note that the prompt is relatively lengthy, which
+is designed so that someone never using the IoT device knows exactly how to generate the username and password. However, for an 
+experienced user of the program, it is relatively easy to enter their information into the system. 
+
+This program makes use of four light sensors (each producing a binary value), and button to serve as a MUX to select which light 
+sensor is active to input the value. The username is a single digit (ranging from 0-7), and the password is 8-digits long, also having
+8 possible values (i.e. 0-7). After the user enters the username/password string, the string is sent over to the server (protected
+by SSL encryption), which processes the username and password, and sending back an encrypted response (i.e. YES or NO). If 
+authenticated, then the program exits, as the door was unlocked. However, if an incorrect string was sent to the server, and a NO
+response was received from the server, the program restarts (via a while loop) for the user to try again to enter the correct string.
+If the user fails to enter the correct string 3 times, then the server initiates a timeout, stops accepting responses from the client,
+and the Edison is locked out for 5 minutes (after which the user can try to enter the correct string).
 
 #### main.h
 Header file containing the included libraries and the global variables
