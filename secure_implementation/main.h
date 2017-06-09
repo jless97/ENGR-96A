@@ -26,13 +26,13 @@
 /////////////////////////////// Defines ////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 // Buffer size for username/password
-#define SEND_BUFFER_SIZE 32
+#define SEND_BUFFER_SIZE 64
 // Buffer size for password
 #define PWD_BUFFER_SIZE 9
 // Buffer size for Group ID
 #define ID_BUFFER_SIZE 1
 // Buffer size to hold message from server
-#define RECV_BUFFER_SIZE 4
+#define RECV_BUFFER_SIZE 16
 // Light threshold distinguising between high or low light intensity
 #define THRESHOLD 100
 

@@ -134,6 +134,7 @@ shutdownSensors(void) {
     mraa_aio_close(light1);
     mraa_aio_close(light2);
     mraa_aio_close(light3);
+    exit(EXIT_SUCCESS);
     
 }
 
@@ -168,14 +169,14 @@ userPrompt(void) {
     fprintf(stdout, "\tLight sensor 2 is either 4 or 5\n");
     fprintf(stdout, "\tLight sensor 3 is either 6 or 7\n\n");
     fprintf(stdout, "===================================================================\n");
-    sleep(8);
+    sleep(1);
     
     // Explain how to produce the given value for the light sensor
     fprintf(stdout, "How to produce values for light sensors:\n\n");
     fprintf(stdout, "1. Cover light sensor to produce the lower number for that sensor \n\t(i.e. Cover light sensor 0 to produce a 0).\n\n");
     fprintf(stdout, "2. Otherwise light sensor produces the higher number for that sensor \n\t(i.e. Don't cover light sensor 2 to produce a 5).\n\n");
     fprintf(stdout, "===================================================================\n");
-    sleep(8);
+    sleep(1);
     
     // Explain how to use the button to choose which light sensor to use
     fprintf(stdout, "To select which light sensor is active, press the button to change\n between light sensors: \n\n");
@@ -183,7 +184,7 @@ userPrompt(void) {
     fprintf(stdout, "- To generate a 2 or a 3, press the button once to switch to light sensor 1.\n");
     fprintf(stdout, "- If the button is pressed again, then light sensor 2 becomes active\n (having values 4 or 5).\n\n");
     fprintf(stdout, "===================================================================\n");
-    sleep(8);
+    sleep(1);
     
     // Prompt user to enter the ID
     fprintf(stdout, "Light sensor currently active: %d\n", button_state);
@@ -300,7 +301,7 @@ createUsernamePassword(void) {
     memset(send_buf, 0, SEND_BUFFER_SIZE);
     
     // Format username
-    strcat(send_buf, "ID = ");
+    strcat(send_buf, "ID = Group");
     strcat(send_buf, id_buf);
     // Format password
     strcat(send_buf, " Password = ");
@@ -335,11 +336,12 @@ sendToServer(char *password) {
     printf("%s\n", receive_buf);
     
     // If correct password, then door is opened, exit program
-    if (strcmp(receive_buf, "YES") == 0) {
+    if (strcmp(receive_buf, "Group3 YES") == 0) {
         retry_password_flag = 0;
+        shutdownSensors();
     }
     // If incorrect password, door still locked, retry if attempts remain
-    else if (strcmp(receive_buf, "NO") == 0) {
+    else if (strcmp(receive_buf, " NO") == 0) {
         retry_count--;
         fprintf(stdout, "Incorrect username/password combination given.\n");
         fprintf(stdout, "Number of retries remaining before lockout: %d\n", retry_count);
@@ -370,7 +372,7 @@ main (int argc, char *argv[]) {
     // for 5 minutes
     while (retry_password_flag && (retry_count != 0)) {
         // Initialize buffers that will store the Group ID and password
-	memset(id_buf, 0, ID_BUFFER_SIZE);
+        memset(id_buf, 0, ID_BUFFER_SIZE);
     	memset(pwd_buf, 0, PWD_BUFFER_SIZE);
     
         // Initiate prompt to user and prompt user for password
@@ -381,14 +383,10 @@ main (int argc, char *argv[]) {
         
         // Send username/password combination to server
         sendToServer(send_buf);
-        
-        // Shutdown the button and light sensors
-        shutdownSensors();
     }
-    
-    /* Debugging */
-    //printf("final buffer: %s\n",buf);
-    //printf("final buffer: %s\n",send_buf);
+
+    // Shutdown the button and light sensors
+    shutdownSensors();
     
     // If no errors encountered, success
     return EXIT_SUCCESS;
