@@ -43,7 +43,7 @@ user can try to input the correct password).
 
 ## Description of included files 
 
-#### main.c
+#### iot_secure_door_unlock.c
 This project consists of setting up our Edison as a client and connecting to a server using the standard TCP/IP and Open SSL APIs.
 Upon running the executable, the user is prompted with a list of instructions on how to enter the username/password string, which is
 to be sent (encrypted) to the server to request access to unlocking a virtual door. Note that the prompt is relatively lengthy, which
@@ -59,10 +59,10 @@ response was received from the server, the program restarts (via a while loop) f
 If the user fails to enter the correct string 3 times, then the server initiates a timeout, stops accepting responses from the client,
 and the Edison is locked out for 5 minutes (after which the user can try to enter the correct string).
 
-#### main.h
+#### iot_secure_door_unlock.h
 Header file containing the included libraries and the global variables
 
-#### main
+#### iot_secure_door_unlock
 The compiled executable
 
 #### Makefile
