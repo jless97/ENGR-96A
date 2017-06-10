@@ -1,4 +1,4 @@
-#E96A: Introduction to Embedded Systems
+# E96A: Introduction to Embedded Systems
 
 ## Secure Implementation (Intel Edison and Grove Sensor Kit: Light Sensor and Button)
 
