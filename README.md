@@ -1,5 +1,11 @@
 # ENGR 96A: Introduction to Embedded Systems
 
+## IoT Implementation Video Links
+[IoT Intel Edison Security System Demo Video](https://www.youtube.com/watch?v=JN9ojomng_o)
+
+[IoT Intel Edison Security System Command-line Prompt](https://www.youtube.com/watch?v=ErEtNlNEZDc&t=21s)
+
+
 ## Background
 This course served as an introduction to embedded systems with the use of an 
 Intel Edison and the Grove Sensor Kit. In addition to embedded systems, this
