@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# backup the old list of repositories
+cp /etc/opkg/base-feeds.conf old_conf_file
+
+# put in the required repositories
+echo src/gz all http://repo.opkg.net/edison/repo/all > /etc/opkg/base-feeds.conf
+echo src/gz edison http://repo.opkg.net/edison/repo/edison >> /etc/opkg/base-feeds.conf
+echo src/gz core2-32 http://repo.opkg.net/edison/repo/core2-32 >> /etc/opkg/base-feeds.conf
+
+# update opkg
+opkg update
+
+# install tar as required by Miniconda2 install
+opkg install tar
+
+# get miniconda2
+wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86.sh
+
+# install miniconda 2
+bash Miniconda2-latest-Linux-x86.sh -b -p /home/root/.miniconda2
+
+# add conda to the path so that you can run python by simply typing "python"
+echo "PATH=/home/root/.miniconda2/bin/:\$PATH" >> /etc/profile
+echo "export PATH" >> /etc/profile
+
+# restore old base-feeds file
+mv old_conf_file /etc/opkg/base-feeds.conf
+opkg update
