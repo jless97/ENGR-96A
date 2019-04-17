@@ -1,4 +1,4 @@
-# ENGR96A - Introduction to Engineering Design & Embedded Systems, Spring 2017
+# ENGR96A - Introduction to Engineering Design & Embedded Systems, Spring 2017 
 
 ## Course Objectives
 * Introduction to practical engineering aspects of their discipline through hands-on development of an embeeded system for use in the Internet of Things.
